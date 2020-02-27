@@ -13,7 +13,7 @@ class TokenPage extends StatelessWidget {
 // class _TokenPageState extends State<TokenPage> {
   // final _formKey = GlobalKey<FormState>();
   // final _bloc = '';
-  final _tLogin = TextEditingController();
+  final _tLogin = TextEditingController(); 
   final _tSenha = TextEditingController();
   final _tToken = TextEditingController();
 
