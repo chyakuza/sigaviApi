@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sigavi_api/pages/token/token_bloc.dart';
 import 'package:sigavi_api/pages/token/token_model.dart';
 import 'package:sigavi_api/utils/api_response.dart';
+import 'package:sigavi_api/utils/prefs.dart';
 
 import 'package:sigavi_api/widgets/appText.dart';
 
@@ -58,6 +59,7 @@ class TokenPage extends StatelessWidget {
         },
         tooltip: 'Consultar CEP',
         child: Icon(Icons.add_location),
+        backgroundColor: Colors.green[300],
       ),
     );
   }
@@ -74,6 +76,15 @@ class TokenPage extends StatelessWidget {
         _tToken.text = 'Sem retorno da API';
       } else {
         _tToken.text = retorno.result.tokenAuth.token;
+         Prefs.setString('Token', retorno.result.tokenAuth.token);
+
+        Future<String> future = Prefs.getString('Token');
+        future.then((String tk) {
+          String token = tk;
+          print('Toke na memoria : ${token}');
+        });
+
+        
       }
     } else {
       _tToken.text = retorno.msg;

@@ -24,7 +24,7 @@ class HomePage extends StatelessWidget {
                   builder: (BuildContext context) => TokenPage())),
               icon: Icon(Icons.vpn_key  ),    
               label: Text("Get Token"),
-              color: Colors.blue,
+              color: Colors.green[300],
               textColor: Colors.white,
             ),
             SizedBox(
@@ -35,7 +35,7 @@ class HomePage extends StatelessWidget {
                   builder: (BuildContext context) => PVPage())),
               icon: Icon(Icons.compare_arrows),
               label: Text("Get dados PV"),
-              color: Colors.blue,
+              color: Colors.green[300],
               textColor: Colors.white,
             ),
           ],
