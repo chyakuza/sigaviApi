@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Prefs {
-
   static Future<bool> getBool(String key) async {
     var prefs = await SharedPreferences.getInstance();
 
@@ -29,9 +28,14 @@ class Prefs {
   }
 
   static Future<String> getString(String key) async {
-    var prefs = await SharedPreferences.getInstance();
+    try {
+      var prefs = await SharedPreferences.getInstance();
 
-    return prefs.getString(key) ?? "";
+      return prefs.getString(key) ?? "";
+    } catch (e) {
+      print(e);
+      return null;
+    }
   }
 
   static void setString(String key, String s) async {

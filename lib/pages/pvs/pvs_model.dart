@@ -1,4 +1,5 @@
 import 'package:sigavi_api/pages/pvs/pvs_pv_model.dart';
+import 'package:sigavi_api/pages/pvs/retorno.dart';
 
 class PvModel {
   Retorno retorno;
@@ -24,24 +25,7 @@ class PvModel {
   }
 }
 
-class Retorno {
-  int result;
-  String message;
 
-  Retorno({this.result, this.message});
-
-  Retorno.fromJson(Map<String, dynamic> json) {
-    result = json['result'];
-    message = json['message'];
-  }
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['result'] = this.result;
-    data['message'] = this.message;
-    return data;
-  }
-}
 
 
 

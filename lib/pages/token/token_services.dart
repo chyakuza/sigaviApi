@@ -3,19 +3,20 @@ import 'package:http/http.dart' as http;
 import 'package:sigavi_api/pages/token/token.dart';
 import 'package:sigavi_api/pages/token/token_model.dart';
 import 'package:sigavi_api/utils/api_response.dart';
+import 'package:sigavi_api/utils/constants.dart';
 
 class TokenServices {
   static Future<ApiResponse<TokenModel>> getToken(
       String login, String senha) async {
     try {
-      String url = "https://gcqas.even.com.br/rest/getTokenSG";
+      String url = urlToken ; //"https://gcqas.even.com.br/rest/getTokenSG";
 
       Map<String, String> headers = {
         "Content-Type": "application/json",
         "Login": "${login}",
         "Senha": "${senha}"
       };
-      // print("Header :$headers");
+      print("Header :$headers");
       // '{ "Login":"sigavi", "Senha" : "sigavi"}'
       final response = await http.post(url, headers: headers);
       //inal json = response.body;
@@ -36,11 +37,13 @@ class TokenServices {
         print("Print Ret: ${tokenRet.tokenAuth.token}");
 
         return ApiResponse.ok(result: tokenRet);
+
       } else {
         return ApiResponse.error(msg: "Não foi possivel encontrar os dados");
       }
     } catch (e, excp) {
-      //print("Erro ${e} excp ${excp} ");
+      print("Erro 2 ${e} excp ${excp} ");
+      ApiResponse.ok(result: "Não foi possivel encontrar os dados :${excp}");
       ApiResponse.error(result: "Não foi possivel encontrar os dados :${excp}");
     }
   }
