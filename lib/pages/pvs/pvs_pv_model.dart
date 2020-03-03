@@ -15,6 +15,7 @@ class PV {
   String pnvDat;
   String pnvDatCtr;
   int imoCod;
+  String imoCnpj;
   String imoNom;
   String pnvCorNom;
   String pnvCooNom;
@@ -40,6 +41,7 @@ class PV {
       this.pnvDat,
       this.pnvDatCtr,
       this.imoCod,
+      this.imoCnpj,
       this.imoNom,
       this.pnvCorNom,
       this.pnvCooNom,
@@ -66,6 +68,7 @@ class PV {
     pnvDatCtr = json['PnvDatCtr'];
     imoCod = json['ImoCod'];
     imoNom = json['ImoNom'];
+    imoCnpj = json['ImoCnpj'];
     pnvCorNom = json['PnvCorNom'];
     pnvCooNom = json['PnvCooNom'];
     pnvGerNom = json['PnvGerNom'];
@@ -102,6 +105,7 @@ class PV {
     data['PnvDat'] = this.pnvDat;
     data['PnvDatCtr'] = this.pnvDatCtr;
     data['ImoCod'] = this.imoCod;
+    data['ImoCnpj'] = this.imoCnpj;
     data['ImoNom'] = this.imoNom;
     data['PnvCorNom'] = this.pnvCorNom;
     data['PnvCooNom'] = this.pnvCooNom;

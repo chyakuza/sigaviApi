@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sigavi_api/pages/pvs/pvs_bloc.dart';
+import 'package:sigavi_api/pages/pvs/pvs_cliente_model.dart';
 import 'package:sigavi_api/pages/pvs/pvs_model.dart';
-import 'package:sigavi_api/pages/pvs/pvs_pv_model.dart';
-import 'package:sigavi_api/pages/pvs/retorno.dart';
+import 'package:sigavi_api/pages/pvs/pvs_services.dart';
 import 'package:sigavi_api/utils/prefs.dart';
-import '../../utils/api_response.dart';
+import 'package:sigavi_api/widgets/pvParcelas.dart';
+import 'package:sigavi_api/widgets/tituloPainel.dart';
 import '../../widgets/appText.dart';
 
 class PVPage extends StatefulWidget {
@@ -13,29 +16,24 @@ class PVPage extends StatefulWidget {
 }
 
 class _PVPageState extends State<PVPage> {
-  //Iniciando o block
-  // void initState() {
-  //   widget._tNumeroPV.text = "269589";
-  //   // Future<ApiResponse<PvModel>> future = PvsBloc().pvs(int.parse(widget._tNumeroPV.text));
-  //   // future.then((pvModel){
-  //   //   setState(() {
-  //   //   });
-  //   }
-  //   super.initState();
-  // }
-  @override
-  void initState() {
-    _getToken();
+  // Iniciando Stream
+  final _resultPv = StreamController<PvModel>();
 
-    super.initState();
-  }
+  PvModel pvModel = PvModel();
+  PvModel pvModelResponse;
 
-  PvModel pvModel;
   Future<PvModel> pvs;
 
   final _tNumeroPV = TextEditingController();
-  final _tRetorno = TextEditingController();
   final _tToken = TextEditingController();
+
+  @override
+  void initState() {
+    _getToken();
+    _loadDados();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,87 +41,302 @@ class _PVPageState extends State<PVPage> {
         backgroundColor: Colors.green[500],
         title: Text("Dados PV"),
       ),
-      body: Container(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: <Widget>[
-            AppText(
-              "Token",
-              "token na memoria",
-              controller: _tToken,
-            ),
-            AppText("Numero PV", "Infome o numero da PV",
-                controller: _tNumeroPV, keyboardType: TextInputType.number),
-            SizedBox(
-              height: 10,
-            ),
-            FlatButton.icon(
-              onPressed: () {
-                _onClickPV();
-              },
-              icon: Icon(Icons.account_balance),
-              label: Text("Get Pv"),
-              color: Colors.green[300],
-              textColor: Colors.white,
-            ),
-            Container(
-              child: Column(
-                children: <Widget>[
-                  Text("Dados Da PV retorno"),
-                  FutureBuilder(
-                      future: _getDadosPv(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return Center(child: Text("Aguardando dados....."));
-                        }
-                        return Center(
-                          child: Text(snapshot.data),
-                        );
-                      })
-                ],
+      body: SingleChildScrollView(
+        child: Container(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: <Widget>[
+              AppText(
+                "Token",
+                "token na memoria",
+                controller: _tToken,
               ),
-            ),
-            TextField(
-              controller: _tRetorno,
-              decoration: InputDecoration(
-                  border: InputBorder.none, hintText: 'Dados Retornado'),
-            )
-          ],
+              AppText("Numero PV", "Infome o numero da PV",
+                  controller: _tNumeroPV, keyboardType: TextInputType.number),
+              SizedBox(
+                height: 10,
+              ),
+              FlatButton.icon(
+                onPressed: () {
+                  _loadDados();
+                },
+                icon: Icon(Icons.account_balance),
+                label: Text("Get Dados Pv"),
+                color: Colors.green[300],
+                textColor: Colors.white,
+              ),
+              Container(
+                margin: EdgeInsets.symmetric(vertical: 10.0),
+                height: 400,
+                width: MediaQuery.of(context).size.width / 0.9,
+                child: Column(
+                  children: <Widget>[
+                    pvResultado(),
+                    // pvParcelas()
+                  ],
+                ),
+                // child: ListView(
+                //   scrollDirection: Axis.horizontal,
+
+                //   children: <Widget>[
+                //     Container(
+                //       width: MediaQuery.of(context).size.width / 1.1,
+                //       child: pvResultado(),
+                //     ),
+                //     // Dados dos clientes
+                //     // pvClientes(),
+
+                //     // Dados das Parcelas
+                //     // pvParcelas(context)
+                //   ],
+                // ),
+              )
+            ],
+          ),
         ),
       ),
     );
   }
 
-  _onClickPV() {
-    
-    if (_tToken.text.isEmpty) {
-      return _tRetorno.text = "Informe o TOKEN";
-    }
-    if (_tNumeroPV.text.isEmpty) {
-      return _tRetorno.text = 'Informe o numero da PV';
-    }
-    Future<PvModel> pvRet = _getDadosPv();
-    setState(() {});
-    try {} catch (e) {}
-  }
-
+  // METODOS
   void _getToken() async {
     _tToken.text = await Prefs.getString('Token');
   }
 
-  Future<PvModel> _getDadosPv() async {
-    Future<ApiResponse<PvModel>> future =
-        PvsBloc().pvs(_tToken.text, int.parse(_tNumeroPV.text));
-    future.then((ApiResponse<PvModel> pvRet) {
-      if (pvRet.ok == true) {
-        PvModel pvModel =
-            new PvModel(pV: pvRet.result.pV, retorno: pvRet.result.retorno);
-        print(pvModel);
-        return pvModel;
-      } else {
-        print("Retornou nada ");
-        return null;
+  _loadDados() async {
+    try {
+      if (!_tNumeroPV.text.isEmpty && !_tToken.text.isEmpty) {
+        pvModelResponse =
+            await PvServices.getPv(_tToken.text, int.parse(_tNumeroPV.text));
+        _resultPv.sink.add(pvModelResponse);
       }
-    });
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  // WIDGETS
+  Widget pvParcelas() {
+    return Container(
+        width: MediaQuery.of(context).size.width / 1.1,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                blurRadius: 10.0,
+                color: Colors.green[100],
+                offset: Offset(0.1, 1.0),
+              ),
+            ]),
+        child: Card(
+          child: Container(
+            padding: EdgeInsets.all(5),
+            child: Column(
+              children: <Widget>[
+                tituloPanel("Dados Parcelas"),
+                Column(
+                  children: <Widget>[
+                    ListView(
+                      scrollDirection: Axis.vertical,
+                      children: <Widget>[
+                        ListTile(
+                          leading: Icon(Icons.access_alarm),
+                          subtitle: Text("Subtitulo"),
+                          title: Text("titulo"),
+                        )
+                      ],
+                    )
+                  ],
+                )
+              ],
+            ),
+          ),
+        ));
+  }
+
+  Widget pvClientes() {
+    return Container(
+        width: MediaQuery.of(context).size.width / 1.1,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                blurRadius: 10.0,
+                color: Colors.green[100],
+                offset: Offset(0.1, 1.0),
+              ),
+            ]),
+        child: Card(
+          child: Container(
+            child: Column(
+              children: <Widget>[
+                Row(
+                  children: <Widget>[tituloPanel("Dados dos Clientes")],
+                ),
+              ],
+            ),
+          ),
+        ));
+  }
+
+  Widget pvResultado() {
+    return StreamBuilder<PvModel>(
+        stream: _resultPv.stream,
+        builder: (context, snapshot) {
+          return snapshot.hasData
+              ? Container(
+                  //margin: EdgeInsets.all(16),
+                  width: MediaQuery.of(context).size.width,
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          blurRadius: 10.0,
+                          color: Colors.green[100],
+                          offset: Offset(0.1, 1.0),
+                        ),
+                      ]),
+                  child: Column(
+                    children: <Widget>[
+                      Card(
+                        child: Container(
+                          padding: EdgeInsets.all(5),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              // Cabecalho Empreendimento
+                              tituloPanel("Empreendimento"),
+                              // Dados da Pv
+                              // Linha 1
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.business,
+                                    color: Colors.green[500],
+                                  ),
+                                  separador(),
+                                  Text(snapshot.data.pV.obrCod),
+                                  separador(),
+                                  Flexible(
+                                      child: Container(
+                                          child: Text(
+                                    snapshot.data.pV.obrNomCom,
+                                    overflow: TextOverflow.ellipsis,
+                                  ))),
+                                ],
+                              ),
+                              SizedBox(
+                                height: 10,
+                              ),
+                              // Linha 2
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.home,
+                                    color: Colors.green[500],
+                                  ),
+                                  separador(),
+                                  Text(snapshot.data.pV.blcCod),
+                                  separador(),
+                                  Text(snapshot.data.pV.blcNom),
+                                  separador(),
+                                  Text((snapshot.data.pV.uniTip == "A")
+                                      ? "APARTAMENTO"
+                                      : "OUTRO"),
+                                ],
+                              ),
+                              // linha 3
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.account_box,
+                                    color: Colors.green[500],
+                                  ),
+                                  separador(),
+                                  Text(
+                                      "Numero PV : ${snapshot.data.pV.pnvCod}"),
+                                  separador(),
+                                  Text("Data:${snapshot.data.pV.pnvDat}"),
+                                ],
+                              ),
+                              // Cabecalho Proposta
+                              tituloPanel("Proposta "),
+
+                              // linha 4
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.flag,
+                                    color: Colors.green[500],
+                                  ),
+                                  separador(),
+                                  Text("Valor :${snapshot.data.pV.pnvVlrPro}"),
+                                  separador(),
+                                  Text(
+                                      "Total Calc. :${snapshot.data.pV.pnvVlrTotCal}"),
+                                ],
+                              ),
+                              tituloPanel("Dados Venda"),
+                              // Linha 5 - Dados da Venda
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.featured_play_list,
+                                    color: Colors.green[300],
+                                  ),
+                                  separador(),
+                                  Text(
+                                      "Imobiliaria : ${snapshot.data.pV.imoCod} - ${snapshot.data.pV.imoNom}"),
+                                ],
+                              ),
+
+                              Row(
+                                children: <Widget>[
+                                  separador(),
+                                  separador(),
+                                  separador(),
+                                  Text(
+                                      "CNPJ : ${snapshot.data.pV.imoCnpj == null ? 'Não informador' : snapshot.data.pV.imoCnpj}")
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                      // CLIENTES
+                      Card(
+                        child: Column(
+                          children: <Widget>[
+                            Container(
+                              child: Column(
+                                children: <Widget>[
+                                  tituloPanel("Clientes"),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                )
+              : Container(
+                  color: Colors.grey[100],
+                  height: 80,
+                  child: Center(
+                      child: CircularProgressIndicator(
+                    backgroundColor: Colors.green,
+                  )),
+                );
+        });
+  }
+
+  Widget separador() {
+    return SizedBox(width: 10);
   }
 }

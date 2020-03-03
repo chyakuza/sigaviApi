@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sigavi_api/pages/home/home_page.dart';
+import 'package:sigavi_api/pages/pvs/pvs_bloc.dart';
 
-
+import 'pages/pvs/pvs_services.dart';
 
 void main() => runApp(MyApp());
 
@@ -9,12 +11,17 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return MultiProvider(
+        providers: [
+          Provider<PvServices>.value(value: PvServices())
+        ],
+          child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: HomePage()//MyHomePage(title: 'Flutter Demo Home Page'),
       ),
-      home: HomePage()//MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
