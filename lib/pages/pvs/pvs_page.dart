@@ -65,31 +65,32 @@ class _PVPageState extends State<PVPage> {
                 color: Colors.green[300],
                 textColor: Colors.white,
               ),
-              Container(
-                margin: EdgeInsets.symmetric(vertical: 10.0),
-                height: 400,
-                width: MediaQuery.of(context).size.width / 0.9,
-                child: Column(
-                  children: <Widget>[
-                    pvResultado(),
-                    // pvParcelas()
-                  ],
+              SingleChildScrollView(
+                child: Container(
+                  margin: EdgeInsets.symmetric(vertical: 10.0),
+                  width: MediaQuery.of(context).size.width / 0.9,
+                  child: Column(
+                    children: <Widget>[
+                      pvResultado(),
+                      // pvParcelas()
+                    ],
+                  ),
+                  // child: ListView(
+                  //   scrollDirection: Axis.horizontal,
+
+                  //   children: <Widget>[
+                  //     Container(
+                  //       width: MediaQuery.of(context).size.width / 1.1,
+                  //       child: pvResultado(),
+                  //     ),
+                  //     // Dados dos clientes
+                  //     // pvClientes(),
+
+                  //     // Dados das Parcelas
+                  //     // pvParcelas(context)
+                  //   ],
+                  // ),
                 ),
-                // child: ListView(
-                //   scrollDirection: Axis.horizontal,
-
-                //   children: <Widget>[
-                //     Container(
-                //       width: MediaQuery.of(context).size.width / 1.1,
-                //       child: pvResultado(),
-                //     ),
-                //     // Dados dos clientes
-                //     // pvClientes(),
-
-                //     // Dados das Parcelas
-                //     // pvParcelas(context)
-                //   ],
-                // ),
               )
             ],
           ),
@@ -313,9 +314,12 @@ class _PVPageState extends State<PVPage> {
                         child: Column(
                           children: <Widget>[
                             Container(
+                              height: 400,
                               child: Column(
                                 children: <Widget>[
                                   tituloPanel("Clientes"),
+                                  
+                                  listaClientes(snapshot),
                                 ],
                               ),
                             )
@@ -338,5 +342,16 @@ class _PVPageState extends State<PVPage> {
 
   Widget separador() {
     return SizedBox(width: 10);
+  }
+
+  Widget listaClientes(AsyncSnapshot<PvModel> snapshot) {
+    List<Clientes> clientes = snapshot.data.pV.clientes;
+    clientes.forEach((c) => () {
+          return ListTile(
+            title: Text("Nome : ${clientes[0].proCliNom}"),
+            subtitle: Text("${clientes[0].proCliMail}"),
+            onLongPress: () {},
+          );
+        });
   }
 }
