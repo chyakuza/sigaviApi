@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sigavi_api/pages/pvs/pvs_bloc.dart';
 import 'package:sigavi_api/pages/pvs/pvs_cliente_model.dart';
 import 'package:sigavi_api/pages/pvs/pvs_model.dart';
+import 'package:sigavi_api/pages/pvs/pvs_pv_model.dart';
 import 'package:sigavi_api/pages/pvs/pvs_services.dart';
 import 'package:sigavi_api/utils/prefs.dart';
 import 'package:sigavi_api/widgets/pvParcelas.dart';
@@ -18,19 +19,24 @@ class PVPage extends StatefulWidget {
 class _PVPageState extends State<PVPage> {
   // Iniciando Stream
   final _resultPv = StreamController<PvModel>();
+  final _resultClientes = StreamController<List<Clientes>>();
 
   PvModel pvModel = PvModel();
   PvModel pvModelResponse;
+  List<Clientes> clientes = [];
 
   Future<PvModel> pvs;
 
   final _tNumeroPV = TextEditingController();
   final _tToken = TextEditingController();
+  bool _result = false;
 
   @override
   void initState() {
     _getToken();
     _loadDados();
+    _loadClientes();
+    _tNumeroPV.text = '270785';
     super.initState();
   }
 
@@ -56,14 +62,29 @@ class _PVPageState extends State<PVPage> {
               SizedBox(
                 height: 10,
               ),
-              FlatButton.icon(
-                onPressed: () {
-                  _loadDados();
-                },
-                icon: Icon(Icons.account_balance),
-                label: Text("Get Dados Pv"),
-                color: Colors.green[300],
-                textColor: Colors.white,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  FlatButton.icon(
+                    onPressed: () {
+                      _loadDados();
+                    },
+                    icon: Icon(Icons.account_balance),
+                    label: Text("Dados Pv"),
+                    color: Colors.green[300],
+                    textColor: Colors.white,
+                  ),
+                  separador(),
+                  FlatButton.icon(
+                    onPressed: () {
+                      _loadClientes();
+                    },
+                    icon: Icon(Icons.account_balance),
+                    label: Text("Dados Clientes"),
+                    color: Colors.green[300],
+                    textColor: Colors.white,
+                  )
+                ],
               ),
               SingleChildScrollView(
                 child: Container(
@@ -73,23 +94,9 @@ class _PVPageState extends State<PVPage> {
                     children: <Widget>[
                       pvResultado(),
                       // pvParcelas()
+                      pvClientes()
                     ],
                   ),
-                  // child: ListView(
-                  //   scrollDirection: Axis.horizontal,
-
-                  //   children: <Widget>[
-                  //     Container(
-                  //       width: MediaQuery.of(context).size.width / 1.1,
-                  //       child: pvResultado(),
-                  //     ),
-                  //     // Dados dos clientes
-                  //     // pvClientes(),
-
-                  //     // Dados das Parcelas
-                  //     // pvParcelas(context)
-                  //   ],
-                  // ),
                 ),
               )
             ],
@@ -104,12 +111,27 @@ class _PVPageState extends State<PVPage> {
     _tToken.text = await Prefs.getString('Token');
   }
 
+  _loadClientes() async {
+    try {
+      clientes =
+          await PvsBloc.clientes(_tToken.text, int.parse(_tNumeroPV.text));
+      print("Retorno Lista : ${clientes.map((c) => c.proCliNom)}");
+      if (clientes.length >= 1) {
+        _resultClientes.add(clientes);
+      }
+    } catch (e) {}
+  }
+
   _loadDados() async {
     try {
       if (!_tNumeroPV.text.isEmpty && !_tToken.text.isEmpty) {
         pvModelResponse =
-            await PvServices.getPv(_tToken.text, int.parse(_tNumeroPV.text));
-        _resultPv.sink.add(pvModelResponse);
+            await PvsBloc.pvs(_tToken.text, int.parse(_tNumeroPV.text));
+        if (pvModelResponse.pV.pnvCod != null) {
+          _resultPv.sink.add(pvModelResponse);
+        } else {
+          _resultPv.close();
+        }
       }
     } catch (e) {
       throw Exception(e);
@@ -117,74 +139,65 @@ class _PVPageState extends State<PVPage> {
   }
 
   // WIDGETS
-  Widget pvParcelas() {
-    return Container(
-        width: MediaQuery.of(context).size.width / 1.1,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                blurRadius: 10.0,
-                color: Colors.green[100],
-                offset: Offset(0.1, 1.0),
-              ),
-            ]),
-        child: Card(
-          child: Container(
-            padding: EdgeInsets.all(5),
-            child: Column(
-              children: <Widget>[
-                tituloPanel("Dados Parcelas"),
-                Column(
-                  children: <Widget>[
-                    ListView(
-                      scrollDirection: Axis.vertical,
-                      children: <Widget>[
-                        ListTile(
-                          leading: Icon(Icons.access_alarm),
-                          subtitle: Text("Subtitulo"),
-                          title: Text("titulo"),
-                        )
-                      ],
-                    )
-                  ],
-                )
-              ],
-            ),
-          ),
-        ));
-  }
 
   Widget pvClientes() {
-    return Container(
-        width: MediaQuery.of(context).size.width / 1.1,
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                blurRadius: 10.0,
-                color: Colors.green[100],
-                offset: Offset(0.1, 1.0),
-              ),
-            ]),
-        child: Card(
-          child: Container(
-            child: Column(
-              children: <Widget>[
-                Row(
-                  children: <Widget>[tituloPanel("Dados dos Clientes")],
+    return StreamBuilder<List<Clientes>>(
+      stream: _resultClientes.stream,
+      builder: (context, snapshot) {
+        return (snapshot.hasData)
+            ? Container(
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        blurRadius: 10.0,
+                        color: Colors.green[100],
+                        offset: Offset(0.1, 1.0),
+                      ),
+                    ]),
+                child: Column(
+                  children: <Widget>[
+                    Card(
+                      child: Container(
+                        padding: EdgeInsets.all(10),
+                        child: Column(
+                          children: <Widget>[
+                            tituloPanel("Clientes"),
+                            Column(
+                              children: <Widget>[
+                                // Titulo Principal
+                                subTituloWidget(
+                                    "Cliente Principal", Colors.blue),
+                                // Dados Cliente Principal
+                                clientePrincipal(snapshot),
+                                SizedBox(
+                                  height: 20,
+                                ),
+                                clienteAuxiliar(snapshot),
+                                // Dados Pessoais
+                              ],
+                            )
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ))
+            : Container(
+                child: Center(
+                  child: Text("Dados não encontrado"),
                 ),
-              ],
-            ),
-          ),
-        ));
+              );
+      },
+    );
   }
 
   Widget pvResultado() {
     return StreamBuilder<PvModel>(
         stream: _resultPv.stream,
         builder: (context, snapshot) {
-          return snapshot.hasData
+          return (snapshot.hasData)
               ? Container(
                   //margin: EdgeInsets.all(16),
                   width: MediaQuery.of(context).size.width,
@@ -309,23 +322,6 @@ class _PVPageState extends State<PVPage> {
                           ),
                         ),
                       ),
-                      // CLIENTES
-                      Card(
-                        child: Column(
-                          children: <Widget>[
-                            Container(
-                              height: 400,
-                              child: Column(
-                                children: <Widget>[
-                                  tituloPanel("Clientes"),
-                                  
-                                  listaClientes(snapshot),
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
-                      )
                     ],
                   ),
                 )
@@ -344,14 +340,195 @@ class _PVPageState extends State<PVPage> {
     return SizedBox(width: 10);
   }
 
-  Widget listaClientes(AsyncSnapshot<PvModel> snapshot) {
-    List<Clientes> clientes = snapshot.data.pV.clientes;
-    clientes.forEach((c) => () {
-          return ListTile(
-            title: Text("Nome : ${clientes[0].proCliNom}"),
-            subtitle: Text("${clientes[0].proCliMail}"),
-            onLongPress: () {},
-          );
-        });
+  Widget subTituloWidget(String titulo, Color color) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          titulo,
+          style: TextStyle(
+              color: color, //Colors.blueAccent[200],
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
+  Widget clienteAuxiliar(AsyncSnapshot<List<Clientes>> snapshot) {
+    List<Widget> listRow = new List<Widget>();
+    List<Clientes> clientes = snapshot.data;
+    for (Clientes item in clientes) {
+      if (item.proCliPri == "NAO") {
+        Clientes prin = Clientes.fromJson(item.toJson());
+        listRow.add(Flexible(
+            child: Container(
+          child: Column(
+            children: <Widget>[
+              subTituloWidget("Clientes Auxiliares", Colors.red),
+              Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.people,
+                    color: Colors.green[300],
+                  ),
+                  separador(),
+                  Text(
+                    "Nome : ${prin.proCliNom}",
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+              Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.email,
+                    color: Colors.green[300],
+                  ),
+                  separador(),
+                  Text("Email : ${prin.proCliMail}",
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+              subTituloWidget("Dados Pessoais", Colors.blue),
+              Column(
+                children: <Widget>[
+                  // Icon(Icons.content_paste, color: Colors.green[300],),
+                  Text(prin.proCliTip == "F"
+                      ? "CPF : ${prin.proCliCod} RG : ${prin.proCliRG}"
+                      : "CNPJ : ${prin.proCliCod}"),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: <Widget>[
+                      Icon(
+                        Icons.phone_android,
+                        color: Colors.green[300],
+                      ),
+                      Text("${prin.proCliTel}"),
+                    ],
+                  ),
+                  Text("Ocupação : ${prin.proCliPro}"),
+                  subTituloWidget("Endereço", Colors.blue),
+                  Text("${prin.proCliEndRes}")
+                ],
+              )
+            ],
+          ),
+        )));
+      }
+    }
+    return new Row(
+      children: listRow,
+    );
+  }
+
+  Widget clientePrincipal(AsyncSnapshot<List<Clientes>> snapshot) {
+    List<Widget> listRow = new List<Widget>();
+    List<Clientes> clientes = snapshot.data;
+
+    for (Clientes item in clientes) {
+      if (item.proCliPri == "SIM") {
+        Clientes prin = Clientes.fromJson(item.toJson());
+        listRow.add(
+          Flexible(
+            child: Container(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.people,
+                        color: Colors.green[300],
+                      ),
+                      separador(),
+                      Text(
+                        "Nome : ${prin.proCliNom}",
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.email,
+                        color: Colors.green[300],
+                      ),
+                      separador(),
+                      Text("Email : ${prin.proCliMail}",
+                          overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                  subTituloWidget("Dados Pessoais", Colors.blue),
+                  Column(
+                    children: <Widget>[
+                      // Icon(Icons.content_paste, color: Colors.green[300],),
+                      Text(prin.proCliTip == "F"
+                          ? "CPF : ${prin.proCliCod} RG : ${prin.proCliRG}"
+                          : "CNPJ : ${prin.proCliCod}"),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: <Widget>[
+                          Icon(
+                            Icons.phone_android,
+                            color: Colors.green[300],
+                          ),
+                          Text("${prin.proCliTel}"),
+                        ],
+                      ),
+                      Text("Ocupação : ${prin.proCliPro}"),
+                      subTituloWidget("Endereço", Colors.blue),
+                      Text("${prin.proCliEndRes}")
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+        // listRow.add(Container(child: Text("Nome :${prin.proCliNom} CPF : ${prin.proCliCod}",style: TextStyle(fontSize: 12),))) ;
+      }
+    }
+    return new Row(
+      children: listRow,
+    );
   }
 }
+
+// Widget pvParcelas() {
+//     return Container(
+//         width: MediaQuery.of(context).size.width / 1.1,
+//         decoration: BoxDecoration(
+//             borderRadius: BorderRadius.circular(15),
+//             boxShadow: <BoxShadow>[
+//               BoxShadow(
+//                 blurRadius: 10.0,
+//                 color: Colors.green[100],
+//                 offset: Offset(0.1, 1.0),
+//               ),
+//             ]),
+//         child: Card(
+//           child: Container(
+//             padding: EdgeInsets.all(5),
+//             child: Column(
+//               children: <Widget>[
+//                 tituloPanel("Dados Parcelas"),
+//                 Column(
+//                   children: <Widget>[
+//                     ListView(
+//                       scrollDirection: Axis.vertical,
+//                       children: <Widget>[
+//                         ListTile(
+//                           leading: Icon(Icons.access_alarm),
+//                           subtitle: Text("Subtitulo"),
+//                           title: Text("titulo"),
+//                         )
+//                       ],
+//                     )
+//                   ],
+//                 )
+//               ],
+//             ),
+//           ),
+//         ));
+//   }
