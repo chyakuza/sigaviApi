@@ -8,25 +8,27 @@ class Parcelas {
   String pnaVlrCom;
   String pnaVlrComNF;
 
-  Parcelas(
-      {this.pnpSeq,
-      this.pnaCod,
-      this.tsrCod,
-      this.tsrDes,
-      this.pnaDatVen,
-      this.pnaParVlr,
-      this.pnaVlrCom,
-      this.pnaVlrComNF});
+  Parcelas({
+    this.pnpSeq,
+    this.pnaCod,
+    this.tsrCod,
+    this.tsrDes,
+    this.pnaDatVen,
+    this.pnaParVlr,
+    this.pnaVlrCom,
+    this.pnaVlrComNF,
+  });
 
-  Parcelas.fromJson(Map<String, dynamic> json) {
-    pnpSeq = json['PnpSeq'];
-    pnaCod = json['PnaCod'];
-    tsrCod = json['TsrCod'];
-    tsrDes = json['TsrDes'];
-    pnaDatVen = json['PnaDatVen'];
-    pnaParVlr = json['PnaParVlr'];
-    pnaVlrCom = json['PnaVlrCom'];
-    pnaVlrComNF = json['PnaVlrComNF'];
+  factory Parcelas.fromJson(Map<String, dynamic> json) {
+    return Parcelas(
+        pnpSeq: json['PnpSeq'],
+        pnaCod: json['PnaCod'],
+        tsrCod: json['TsrCod'],
+        tsrDes: json['TsrDes'],
+        pnaDatVen: json['PnaDatVen'],
+        pnaParVlr: json['PnaParVlr'],
+        pnaVlrCom: json['PnaVlrCom'],
+        pnaVlrComNF: json['PnaVlrComNF']);
   }
 
   Map<String, dynamic> toJson() {

@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:sigavi_api/pages/pvs/pvs_bloc.dart';
 import 'package:sigavi_api/pages/pvs/pvs_cliente_model.dart';
 import 'package:sigavi_api/pages/pvs/pvs_model.dart';
-import 'package:sigavi_api/pages/pvs/pvs_pv_model.dart';
-import 'package:sigavi_api/pages/pvs/pvs_services.dart';
+import 'package:sigavi_api/pages/pvs/pvs_parcelas_lista.dart';
+import 'package:sigavi_api/pages/pvs/pvs_parcelas_model.dart';
 import 'package:sigavi_api/utils/prefs.dart';
-import 'package:sigavi_api/widgets/pvParcelas.dart';
 import 'package:sigavi_api/widgets/tituloPainel.dart';
 import '../../widgets/appText.dart';
 
@@ -20,10 +19,12 @@ class _PVPageState extends State<PVPage> {
   // Iniciando Stream
   final _resultPv = StreamController<PvModel>();
   final _resultClientes = StreamController<List<Clientes>>();
+  final _resultParcelas = StreamController<List<Parcelas>>();
 
   PvModel pvModel = PvModel();
   PvModel pvModelResponse;
   List<Clientes> clientes = [];
+  List<Parcelas> listaParcelas = [];
 
   Future<PvModel> pvs;
 
@@ -36,6 +37,7 @@ class _PVPageState extends State<PVPage> {
     _getToken();
     _loadDados();
     _loadClientes();
+    _loadParcelas();
     _tNumeroPV.text = '270785';
     super.initState();
   }
@@ -68,6 +70,8 @@ class _PVPageState extends State<PVPage> {
                   FlatButton.icon(
                     onPressed: () {
                       _loadDados();
+                      _loadClientes();
+                      _loadParcelas();
                     },
                     icon: Icon(Icons.account_balance),
                     label: Text("Dados Pv"),
@@ -75,15 +79,15 @@ class _PVPageState extends State<PVPage> {
                     textColor: Colors.white,
                   ),
                   separador(),
-                  FlatButton.icon(
-                    onPressed: () {
-                      _loadClientes();
-                    },
-                    icon: Icon(Icons.account_balance),
-                    label: Text("Dados Clientes"),
-                    color: Colors.green[300],
-                    textColor: Colors.white,
-                  )
+                  // FlatButton.icon(
+                  //   onPressed: () {
+                      
+                  //   },
+                  //   icon: Icon(Icons.account_balance),
+                  //   label: Text("Dados Clientes"),
+                  //   color: Colors.green[300],
+                  //   textColor: Colors.white,
+                  // )
                 ],
               ),
               SingleChildScrollView(
@@ -93,8 +97,8 @@ class _PVPageState extends State<PVPage> {
                   child: Column(
                     children: <Widget>[
                       pvResultado(),
-                      // pvParcelas()
-                      pvClientes()
+                      pvClientes(),
+                      pvParcelas()
                     ],
                   ),
                 ),
@@ -111,11 +115,35 @@ class _PVPageState extends State<PVPage> {
     _tToken.text = await Prefs.getString('Token');
   }
 
+  _loadParcelas() async {
+    // List<Parcelas> listaMensal = [];
+    // List<double> totalAgragado = [];
+    try {
+      listaParcelas =
+          await PvsBloc.parcelas(_tToken.text, int.parse(_tNumeroPV.text));
+      // Adicionando conteudo na Stream
+      _resultParcelas.add(listaParcelas);
+      print("Total de parcelas carregadas : ${listaParcelas.length}");
+
+      // for (Parcelas p in listaParcelas) {
+      //   if (p.tsrCod == 1) {
+      //     listaMensal.add(p);
+      //     totalAgragado.add(double.parse(p.pnaParVlr));
+      //   }
+      // }
+      // double totalValorParcela = totalAgragado.reduce((anterior, atual) {
+      //   return anterior + atual;
+      // });
+      // print("Total Parcela Mensal : ${totalValorParcela.toStringAsFixed(2)}");
+
+    } catch (e) {}
+  }
+
   _loadClientes() async {
     try {
       clientes =
           await PvsBloc.clientes(_tToken.text, int.parse(_tNumeroPV.text));
-      print("Retorno Lista : ${clientes.map((c) => c.proCliNom)}");
+      // print("Retorno Cliente Lista : ${clientes.map((c) => c.proCliNom)}");
       if (clientes.length >= 1) {
         _resultClientes.add(clientes);
       }
@@ -139,6 +167,45 @@ class _PVPageState extends State<PVPage> {
   }
 
   // WIDGETS
+  Widget pvParcelas() {
+    return StreamBuilder(
+      stream: _resultParcelas.stream,
+      builder: (context, snapshot) {        
+        return (snapshot.hasData)
+            ? Container(
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      blurRadius: 10.0,
+                      color: Colors.green[100],
+                      offset: Offset(0.1, 1.0),
+                    )
+                  ],
+                ),
+                child: Column(
+                  children: <Widget>[
+                    Card(
+                      child: Container(
+                        padding: EdgeInsets.all(10),
+                        child: Column(
+                          children: <Widget>[
+                            tituloPanel("Parcelas")
+
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              )
+            : Container(
+                child: Text("Dados não carregados..."),
+              );
+      },
+    );
+  }
 
   Widget pvClientes() {
     return StreamBuilder<List<Clientes>>(
